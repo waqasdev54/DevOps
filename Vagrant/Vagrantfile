@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Define the number of VMs
+  num_vms = 4
+
+  # Use Ubuntu 20.04 LTS as the base box
+  config.vm.box = "ubuntu/focal64"
+
+  # Disable the default shared folder
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # Configure VMs
+  (1..num_vms).each do |i|
+    config.vm.define "ubuntu-#{i}" do |node|
+      # Set hostname
+      node.vm.hostname = "ubuntu-#{i}"
+
+      # Configure private network with static IP
+      node.vm.network "private_network", ip: "192.168.56.#{10+i}"
+
+      # Configure SSH
+      node.ssh.insert_key = true
+      node.vm.provision "shell", inline: <<-SHELL
+        # Update SSH configuration
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart sshd
+
+        # Set a password for the vagrant user (change 'password' to your desired password)
+        echo 'vagrant:password' | sudo chpasswd
+
+        # Install necessary packages
+        sudo apt-get update
+        sudo apt-get install -y net-tools
+      SHELL
+
+      # Configure VirtualBox provider
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = 1
+      end
+    end
+  end
+end
