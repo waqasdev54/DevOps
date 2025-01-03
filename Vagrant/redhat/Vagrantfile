@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Common configuration
+  config.vm.box = "generic/rhel8"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+    vb.cpus = 2
+  end
+
+  # Private network for all VMs
+  NETWORK_PREFIX = "192.168.56"
+
+  # SSH key setup script
+  $ssh_setup = <<-SCRIPT
+    cat /vagrant/master_key.pub >> /home/vagrant/.ssh/authorized_keys
+    chmod 600 /home/vagrant/.ssh/authorized_keys
+  SCRIPT
+
+  # Subscription manager setup
+  $subscription_setup = <<-SCRIPT
+    subscription-manager register --username demoabc --password demoabcxd --auto-attach
+  SCRIPT
+
+  # Create master node
+  config.vm.define "master" do |master|
+    master.vm.hostname = "master"
+    master.vm.network "private_network", ip: "#{NETWORK_PREFIX}.10"
+    
+    master.vm.provision "shell", inline: $subscription_setup
+    master.vm.provision "shell", inline: <<-SCRIPT
+      dnf install -y ansible
+      ssh-keygen -t rsa -N "" -f /home/vagrant/.ssh/id_rsa
+      cp /home/vagrant/.ssh/id_rsa.pub /vagrant/master_key.pub
+    SCRIPT
+  end
+
+  # Create worker nodes
+  (1..3).each do |i|
+    config.vm.define "node#{i}" do |node|
+      node.vm.hostname = "node#{i}"
+      node.vm.network "private_network", ip: "#{NETWORK_PREFIX}.#{i+10}"
+      
+      node.vm.provision "shell", inline: $subscription_setup
+      node.vm.provision "shell", inline: $ssh_setup
+    end
+  end
+end
