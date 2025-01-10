@@ -1,36 +1,41 @@
 ---
-# inventory.yml
-all:
-  hosts:
-    # Add your servers here
-    server1.example.com:
-    server2.example.com:
-  vars:
-    service_account: SVCSNowDisc
-    ssh_key_type: rsa
-    ssh_key_bits: 4096
-
----
 # ssh-key-setup.yml
 - name: Setup SSH Keys for ITOM Service Account
   hosts: all
   become: true
-  vars_files:
-    - inventory.yml
+  vars:
+    service_account: SVCSNowDisc
+    ssh_key_type: rsa
+    ssh_key_bits: 4096
+    ssh_key_dir: "/var/lib/awx/.ssh"  # Ansible Tower's home directory
   
   tasks:
-    # Generate key on the control node first (runs only once)
-    - name: Generate SSH key pair locally
-      openssh_keypair:
-        path: "./{{ service_account }}_id_{{ ssh_key_type }}"
-        type: "{{ ssh_key_type }}"
-        bits: "{{ ssh_key_bits }}"
-        comment: "{{ service_account }}@domain.com"
+    # Create SSH directory in Ansible Tower's home with correct permissions
+    - name: Ensure SSH directory exists in Tower
+      file:
+        path: "{{ ssh_key_dir }}"
+        state: directory
+        mode: '0700'
+        owner: awx
+        group: awx
       delegate_to: localhost
       run_once: true
 
-    # Ensure .ssh directory exists
-    - name: Create .ssh directory if it doesn't exist
+    # Generate key on the Tower node
+    - name: Generate SSH key pair on Tower
+      openssh_keypair:
+        path: "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
+        type: "{{ ssh_key_type }}"
+        bits: "{{ ssh_key_bits }}"
+        comment: "{{ service_account }}@domain.com"
+        mode: '0600'
+        owner: awx
+        group: awx
+      delegate_to: localhost
+      run_once: true
+
+    # Ensure target user's .ssh directory exists
+    - name: Create .ssh directory for service account
       file:
         path: "/home/{{ service_account }}/.ssh"
         state: directory
@@ -43,10 +48,10 @@ all:
       authorized_key:
         user: "{{ service_account }}"
         state: present
-        key: "{{ lookup('file', './{{ service_account }}_id_{{ ssh_key_type }}.pub') }}"
+        key: "{{ lookup('file', '{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}.pub') }}"
 
-    # Ensure proper permissions
-    - name: Set correct permissions on .ssh directory
+    # Ensure proper permissions on target
+    - name: Set correct permissions on service account .ssh directory
       file:
         path: "/home/{{ service_account }}/.ssh"
         state: directory
