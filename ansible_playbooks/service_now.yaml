@@ -7,10 +7,10 @@
     service_account: SVCSNowDisc
     ssh_key_type: rsa
     ssh_key_bits: 4096
-    ssh_key_dir: "/var/lib/awx/.ssh"  # Ansible Tower's home directory
+    ssh_key_dir: "/var/lib/awx/.ssh"
   
   tasks:
-    # Create SSH directory in Ansible Tower's home with correct permissions
+    # Create SSH directory in Tower's home
     - name: Ensure SSH directory exists in Tower
       file:
         path: "{{ ssh_key_dir }}"
@@ -21,20 +21,33 @@
       delegate_to: localhost
       run_once: true
 
-    # Generate key on the Tower node
+    # Generate SSH key using ssh-keygen command
     - name: Generate SSH key pair on Tower
-      openssh_keypair:
-        path: "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
-        type: "{{ ssh_key_type }}"
-        bits: "{{ ssh_key_bits }}"
-        comment: "{{ service_account }}@domain.com"
-        mode: '0600'
-        owner: awx
-        group: awx
+      command: >
+        ssh-keygen -t {{ ssh_key_type }} 
+        -b {{ ssh_key_bits }}
+        -C "{{ service_account }}@domain.com"
+        -f {{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}
+        -N ""
+      args:
+        creates: "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
       delegate_to: localhost
       run_once: true
 
-    # Ensure target user's .ssh directory exists
+    # Set proper permissions on the generated keys
+    - name: Set permissions on SSH keys
+      file:
+        path: "{{ item }}"
+        mode: "{{ '0600' if item.endswith('rsa') else '0644' }}"
+        owner: awx
+        group: awx
+      with_items:
+        - "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
+        - "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}.pub"
+      delegate_to: localhost
+      run_once: true
+
+    # Rest of the tasks remain the same
     - name: Create .ssh directory for service account
       file:
         path: "/home/{{ service_account }}/.ssh"
@@ -43,14 +56,12 @@
         owner: "{{ service_account }}"
         group: "{{ service_account }}"
 
-    # Copy the public key to all servers
     - name: Deploy public key to authorized_keys
       authorized_key:
         user: "{{ service_account }}"
         state: present
         key: "{{ lookup('file', '{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}.pub') }}"
 
-    # Ensure proper permissions on target
     - name: Set correct permissions on service account .ssh directory
       file:
         path: "/home/{{ service_account }}/.ssh"
