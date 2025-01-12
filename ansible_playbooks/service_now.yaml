@@ -1,72 +1,59 @@
----
-# ssh-key-setup.yml
-- name: Setup SSH Keys for ITOM Service Account
+- name: Setup SSH Key-Based Authentication for Service User
   hosts: all
   become: true
   vars:
-    service_account: SVCSNowDisc
-    ssh_key_type: rsa
-    ssh_key_bits: 4096
-    ssh_key_dir: "/var/lib/awx/.ssh"
-  
+    service_user: SVCSNowDisc
+    ssh_key_file: "/tmp/{{ service_user }}_id_rsa"
+
   tasks:
-    # Create SSH directory in Tower's home
-    - name: Ensure SSH directory exists in Tower
-      file:
-        path: "{{ ssh_key_dir }}"
-        state: directory
-        mode: '0700'
-        owner: awx
-        group: awx
-      delegate_to: localhost
-      run_once: true
-
-    # Generate SSH key using ssh-keygen command
-    - name: Generate SSH key pair on Tower
-      command: >
-        ssh-keygen -t {{ ssh_key_type }} 
-        -b {{ ssh_key_bits }}
-        -C "{{ service_account }}@domain.com"
-        -f {{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}
-        -N ""
-      args:
-        creates: "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
-      delegate_to: localhost
-      run_once: true
-
-    # Set proper permissions on the generated keys
-    - name: Set permissions on SSH keys
-      file:
-        path: "{{ item }}"
-        mode: "{{ '0600' if item.endswith('rsa') else '0644' }}"
-        owner: awx
-        group: awx
-      with_items:
-        - "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}"
-        - "{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}.pub"
-      delegate_to: localhost
-      run_once: true
-
-    # Rest of the tasks remain the same
-    - name: Create .ssh directory for service account
-      file:
-        path: "/home/{{ service_account }}/.ssh"
-        state: directory
-        mode: '0700'
-        owner: "{{ service_account }}"
-        group: "{{ service_account }}"
-
-    - name: Deploy public key to authorized_keys
-      authorized_key:
-        user: "{{ service_account }}"
+    - name: Ensure the service user exists
+      ansible.builtin.user:
+        name: "{{ service_user }}"
         state: present
-        key: "{{ lookup('file', '{{ ssh_key_dir }}/{{ service_account }}_id_{{ ssh_key_type }}.pub') }}"
 
-    - name: Set correct permissions on service account .ssh directory
-      file:
-        path: "/home/{{ service_account }}/.ssh"
+    - name: Generate SSH key pair locally (only on localhost)
+      ansible.builtin.command:
+        cmd: "ssh-keygen -t rsa -b 4096 -f {{ ssh_key_file }} -N ''"
+        creates: "{{ ssh_key_file }}.pub"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Read public key from generated key pair
+      ansible.builtin.slurp:
+        src: "{{ ssh_key_file }}.pub"
+      delegate_to: localhost
+      register: public_key
+      run_once: true
+
+    - name: Ensure .ssh directory exists for service user on all hosts
+      ansible.builtin.file:
+        path: "/home/{{ service_user }}/.ssh"
         state: directory
         mode: '0700'
-        owner: "{{ service_account }}"
-        group: "{{ service_account }}"
-        recurse: yes
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
+
+    - name: Distribute public key to authorized_keys on all hosts
+      ansible.builtin.authorized_key:
+        user: "{{ service_user }}"
+        state: present
+        key: "{{ public_key['content'] | b64decode }}"
+        manage_dir: no
+
+    - name: Copy private key to control machine (optional)
+      ansible.builtin.copy:
+        src: "{{ ssh_key_file }}"
+        dest: "/home/{{ ansible_user }}/.ssh/{{ service_user }}_id_rsa"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0600'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Set proper permissions on .ssh directory for service user
+      ansible.builtin.file:
+        path: "/home/{{ service_user }}/.ssh"
+        state: directory
+        mode: '0700'
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
