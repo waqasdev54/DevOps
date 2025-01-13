@@ -1,11 +1,23 @@
+---
 - name: Setup SSH Key-Based Authentication for Service User
   hosts: all
   become: true
   vars:
     service_user: SVCSNowDisc
-    ssh_key_file: "/tmp/{{ service_user }}_id_rsa"
-
+    ssh_key_dir: "/opt/ssh_keys"  # New defined path for storing keys
+    ssh_key_file: "{{ ssh_key_dir }}/{{ service_user }}_id_rsa"
+  
   tasks:
+    - name: Create SSH key directory on control node
+      ansible.builtin.file:
+        path: "{{ ssh_key_dir }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      delegate_to: localhost
+      run_once: true
+
     - name: Ensure the service user exists
       ansible.builtin.user:
         name: "{{ service_user }}"
@@ -17,6 +29,18 @@
         creates: "{{ ssh_key_file }}.pub"
       delegate_to: localhost
       run_once: true
+
+    - name: Set proper permissions on SSH key files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: "{{ '0600' if item == ssh_key_file else '0644' }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      delegate_to: localhost
+      run_once: true
+      loop:
+        - "{{ ssh_key_file }}"
+        - "{{ ssh_key_file }}.pub"
 
     - name: Read public key from generated key pair
       ansible.builtin.slurp:
@@ -40,7 +64,7 @@
         key: "{{ public_key['content'] | b64decode }}"
         manage_dir: no
 
-    - name: Copy private key to control machine (optional)
+    - name: Copy private key to control machine
       ansible.builtin.copy:
         src: "{{ ssh_key_file }}"
         dest: "/home/{{ ansible_user }}/.ssh/{{ service_user }}_id_rsa"
