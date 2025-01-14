@@ -5,7 +5,7 @@
   vars:
     ansible_user: waqas
     service_user: SVCSNowDisc
-    ssh_key_dir: "/home/netsys/svcnow"
+    ssh_key_dir: "/opt/ssh_keys"
     ssh_key_file: "{{ ssh_key_dir }}/{{ service_user }}_id_rsa"
     
   tasks:
@@ -51,12 +51,23 @@
         owner: "{{ service_user }}"
         group: "{{ service_user }}"
 
-    - name: Distribute public key to authorized_keys on all hosts
-      ansible.posix.authorized_key:
-        user: "{{ service_user }}"
+    - name: Create authorized_keys file for service user
+      ansible.builtin.file:
+        path: "/home/{{ service_user }}/.ssh/authorized_keys"
+        state: touch
+        mode: '0600'
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
+
+    - name: Add public key to authorized_keys file
+      ansible.builtin.lineinfile:
+        path: "/home/{{ service_user }}/.ssh/authorized_keys"
+        line: "{{ public_key['content'] | b64decode }}"
         state: present
-        key: "{{ public_key['content'] | b64decode }}"
-        manage_dir: no
+        create: yes
+        owner: "{{ service_user }}"
+        group: "{{ service_user }}"
+        mode: '0600'
 
     - name: Copy private key to control machine
       ansible.builtin.copy:
