@@ -1,11 +1,7 @@
----
-- name: Setup SSH Key-Based Authentication for Service User
-  hosts: servers
-  become: true
-  vars:
-    ansible_user: waqas
+vars:
+    ansible_user: netsys
     service_user: SVCSNowDisc
-    ssh_key_dir: "/opt/ssh_keys"
+    ssh_key_dir: "/home/netsys/svcnow"
     ssh_key_file: "{{ ssh_key_dir }}/{{ service_user }}_id_rsa"
     
   tasks:
