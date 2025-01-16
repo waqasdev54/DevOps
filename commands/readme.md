@@ -44,3 +44,20 @@ sudo subscription-manager repos --enable=rhel-8-baseos-rpms
 sudo subscription-manager repos --enable=rhel-8-appstream-rpms
 
 
+#16Jan
+
+sudo chown -R sebelanger@uncw.edu:uncw-sa /home/belangerx
+sudo chown -R sebelanger@uncw.edu:uncw-sa /home/secelabanger
+
+
+getfacl /home/olatlabin
+getfacl /home/secelabition
+
+sudo setfacl -m u:secelabition@uncw.edu:rwx /home/olatlabin
+sudo setfacl -m u:secelabition@uncw.edu:rwx /home/secelabition
+
+ls -ld /home/chimera
+
+sudo chown -R sebelanger@uncw.edu:uncw-sa /home/chimera
+sudo chmod -R 770 /home/chimera
+
