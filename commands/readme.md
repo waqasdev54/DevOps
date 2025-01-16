@@ -61,3 +61,10 @@ ls -ld /home/chimera
 sudo chown -R sebelanger@uncw.edu:uncw-sa /home/chimera
 sudo chmod -R 770 /home/chimera
 
+I wanted to provide you with an update on this task:
+
+I have successfully assigned the correct permissions to sebelanger@uncw.edu for the /home/belangerx and /home/secelabanger directories.
+Regarding the permissions for secelabition@uncw.edu, there is some ambiguity that needs clarification. I am awaiting a scheduled meeting to discuss and finalize the required access permissions for the /home/olatlabin and /home/secelabition directories.
+I will proceed with the necessary updates as soon as the meeting resolves the open questions. Please let me know if you have any additional concerns or requirements in the meantime.
+
+
