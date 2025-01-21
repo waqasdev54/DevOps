@@ -1,0 +1,38 @@
+---
+- name: Disable root SSH login and X11 forwarding
+  hosts: all
+  become: yes
+  tasks:
+    - name: Backup sshd_config
+      copy:
+        src: /etc/ssh/sshd_config
+        dest: /etc/ssh/sshd_config.backup
+        remote_src: yes
+
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+        validate: '/usr/sbin/sshd -t -f %s'
+
+    - name: Disable X11 Forwarding
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?X11Forwarding'
+        line: 'X11Forwarding no'
+        validate: '/usr/sbin/sshd -t -f %s'
+
+    - name: Restart sshd service
+      service:
+        name: sshd
+        state: restarted
+
+    - name: Verify configuration
+      shell: sshd -T | grep -E 'permitrootlogin|x11forwarding'
+      register: ssh_status
+      changed_when: false
+
+    - name: Show current SSH configuration status
+      debug:
+        msg: "SSH configuration status: {{ ssh_status.stdout_lines }}"
