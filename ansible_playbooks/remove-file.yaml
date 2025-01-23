@@ -1,0 +1,9 @@
+---
+- hosts: all
+  tasks:
+    - name: Remove authorized_keys file
+      file:
+        path: /home/SVCSNowDisc/.ssh/authorized_keys
+        state: absent
+      become: yes
+      become_user: root
