@@ -29,9 +29,27 @@ pipeline {
                     script {
                         def repos = readJSON(text: params.REPOS_CONFIG)
                         def createdRepos = []
+                        def skippedRepos = []
                         def failedRepos = []
                         
                         repos.each { repo ->
+                            // Check if repository already exists
+                            def repoCheckResponse = sh(
+                                script: """
+                                    curl -s -o /dev/null -w "%{http_code}" \
+                                    -H "Authorization: Bearer $GITHUB_TOKEN" \
+                                    -H "Accept: application/vnd.github+json" \
+                                    https://api.github.com/repos/${GITHUB_ORG}/${repo.name}
+                                """,
+                                returnStdout: true
+                            ).trim()
+                            
+                            if (repoCheckResponse == "200") {
+                                skippedRepos.add(repo.name)
+                                echo "Repository ${repo.name} already exists. Skipping creation."
+                                return
+                            }
+                            
                             // Validate template repository configuration
                             if (!repo.template_repository || !repo.template_repository.owner || !repo.template_repository.repository) {
                                 failedRepos.add("${repo.name}: Missing template repository configuration")
@@ -71,6 +89,10 @@ pipeline {
                         // Report results
                         if (createdRepos) {
                             echo "Successfully created repositories: ${createdRepos.join(', ')}"
+                        }
+                        
+                        if (skippedRepos) {
+                            echo "Skipped repositories (already exist): ${skippedRepos.join(', ')}"
                         }
                         
                         if (failedRepos) {
