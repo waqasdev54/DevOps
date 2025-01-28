@@ -1,0 +1,43 @@
+[uncw_rhel_servers]
+argon.dobolabs.uncw.edu ansible_host=152.20.240.118
+cadmium.dobolabs.uncw.edu ansible_host=152.20.240.124
+francium.dobolabs.uncw.edu ansible_host=152.20.11.186
+hafnium.dobolabs.uncw.edu ansible_host=152.20.240.119
+helium.dobolabs.uncw.edu ansible_host=152.20.11.182
+krypton.dobolabs.uncw.edu ansible_host=152.20.240.141
+neon.dobolabs.uncw.edu ansible_host=152.20.11.176
+radon.dobolabs.uncw.edu ansible_host=152.20.240.120
+sodium.dobolabs.uncw.edu ansible_host=152.20.11.187
+xenon.dobolabs.uncw.edu ansible_host=152.20.11.183
+
+[uncw_centos_servers]
+itswatchdog.dcs.uncw.edu ansible_host=152.20.240.23
+
+[uncw_rhel8_servers]
+itsrain.dcs.uncw.edu ansible_host=10.100.1.11
+
+[oracle_linux_servers]
+prod-exa-01-ovq0j1 ansible_host=10.51.3.84
+prod-exa-01-ovq0j2 ansible_host=10.51.3.10
+dev-exa-01-gsqed1 ansible_host=10.51.3.194
+dev-exa-01-gsqed2 ansible_host=10.51.3.5
+oci-ldap03 ansible_host=10.51.5.5
+syslog-oci ansible_host=10.51.5.9
+itsnexms05-d-i ansible_host=10.51.5.11
+itsbanmf01-oci ansible_host=10.51.1.22
+iobp-oci ansible_host=10.51.1.23
+eprint-oci ansible_host=10.51.1.27
+itsjava03-oci ansible_host=10.51.1.41
+itssambatest-oci ansible_host=10.51.6.3
+itsodiprod01-oci ansible_host=10.51.1.178
+itssolman01-oci ansible_host=10.51.1.125
+itsbanadmin03-oci ansible_host=10.51.1.239
+itsbanadmin04-oci ansible_host=10.51.1.52
+jobt-oci ansible_host=10.51.6.2
+job24t-oci ansible_host=10.51.2.14
+itsbandevw101-oci ansible_host=10.51.2.137
+itsjava03dev-oci ansible_host=10.51.2.13
+itsodidev01-oci ansible_host=10.51.2.33
+itsbanadmindev02-oci ansible_host=10.51.2.85
+itsbanadminpprd02-oci ansible_host=10.51.2.41
+inventory ansible_host=10.51.2.254
