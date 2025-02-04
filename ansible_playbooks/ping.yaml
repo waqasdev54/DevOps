@@ -1,0 +1,7 @@
+---
+- name: Ping all servers
+  hosts: all  # This will run on all servers in your inventory
+  gather_facts: no 
+  tasks:
+    - name: Ping all servers
+      ansible.builtin.ping:
