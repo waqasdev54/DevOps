@@ -1,0 +1,37 @@
+sudo nano /etc/nagios/nrpe.cfg
+
+command[check_port_8080]=/usr/lib/nagios/plugins/check_tcp -H localhost -p 8080
+command[check_port_8081]=/usr/lib/nagios/plugins/check_tcp -H localhost -p 8081
+command[check_port_8082]=/usr/lib/nagios/plugins/check_tcp -H localhost -p 8082
+
+
+sudo systemctl restart nagios-nrpe-server
+
+On Nagios Server 
+sudo nano /etc/nagios/conf.d/services_hostname.cfg
+
+define service {
+    use                  generic-service
+    host_name            hostname
+    service_description  Port 8080 Status
+    check_command        check_nrpe!check_port_8080
+}
+
+define service {
+    use                  generic-service
+    host_name            hostname
+    service_description  Port 8081 Status
+    check_command        check_nrpe!check_port_8081
+}
+
+define service {
+    use                  generic-service
+    host_name            hostname
+    service_description  Port 8082 Status
+    check_command        check_nrpe!check_port_8082
+}
+
+
+Verify Nagios Configuration
+sudo nagios -v /etc/nagios/nagios.cfg
+
