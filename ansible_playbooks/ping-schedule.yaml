@@ -1,0 +1,29 @@
+---
+- name: Ping hosts and send report via email
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Ping hosts
+      ansible.builtin.ping:
+      register: ping_result
+      ignore_errors: yes
+
+    - name: Build report
+      ansible.builtin.set_fact:
+        ping_report: |
+          Ping Report:
+          {% for host in ping_result.results %}
+          {{ host.item }} - {{ 'Success' if host.ping is defined else 'Failed' }}
+          {% endfor %}
+
+    - name: Send email with report
+      community.general.mail:
+        host: smtp.yourmailserver.com
+        port: 587
+        username: your-email@example.com
+        password: your-email-password
+        to: recipient@example.com
+        subject: "Ansible Ping Report"
+        body: "{{ ping_report }}"
+      delegate_to: localhost
