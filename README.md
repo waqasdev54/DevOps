@@ -1,19 +1,32 @@
-# DevOps
-I have written some trick related to devops
+# Creating and Configuring a Samba Share Folder
 
-**Summary**
-https://security.snyk.io/package/maven/org.springframework%3Aspring-beans/4.3.8.RELEASE 
+This guide provides all the commands necessary to create and configure a Samba share folder.
 
-we need to upgrade spring framework from 4.3.8 to 5.3.X. but before we need to see what are the breaking changes dependencies.
+## Prerequisites
 
-How to fix Denial of Service (DoS)?
+- A Debian/Ubuntu-based Linux system with sudo privileges.
+- An active internet connection.
 
-Upgrade org.springframework:spring-beans to version 5.2.22.RELEASE, 5.3.20 or higher.
+## Steps
 
-How to fix Remote Code Execution?
+### 1. Update the Package List
 
-Upgrade org.springframework:spring-beans to version 5.2.20, 5.3.18 or higher.
+Update your system's package list to ensure you have access to the latest package versions.
 
-Upgrade Stretegy 
+```bash
+sudo mkdir -p /srv/samba/share
+sudo chmod 2775 /srv/samba/share
 
-https://github.com/spring-projects/spring-framework/wiki/upgrading-to-spring-framework-5.x
+sudo tee -a /etc/samba/smb.conf <<EOF
+[SharedFolder]
+   path = /srv/samba/share
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   create mask = 0664
+   directory mask = 2775
+EOF
+
+sudo systemctl restart smbd
+
+
