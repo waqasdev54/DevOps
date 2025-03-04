@@ -5,4 +5,7 @@ setenv=LEAPP_ENABLE_REPOS=ol8_basemediol_ol8_appstream_ol8_UEKR6_ol8_addons_ol8_
 sudo yum-config-manager --enable ol8_baseos_latest ol8_appstream ol8_UEKR6
 sudo yum repolist
 
+sudo yum --releasever=8.10 search libgpg-error
+sudo yum --releasever=8.10 search python3-dnf
+
 
