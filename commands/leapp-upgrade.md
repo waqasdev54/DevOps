@@ -9,3 +9,7 @@ sudo yum --releasever=8.10 search libgpg-error
 sudo yum --releasever=8.10 search python3-dnf
 
 
+sudo yum clean all
+sudo rm -rf /var/cache/yum
+
+
