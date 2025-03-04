@@ -12,4 +12,8 @@ sudo yum --releasever=8.10 search python3-dnf
 sudo yum clean all
 sudo rm -rf /var/cache/yum
 
+-----------------
+
+sudo yum install python3-javapackages rpm python3-pyxdg gdk-pixbuf2-xlib ivy-local libnsl2-devel rpcsvc-proto-devel -y
+
 
