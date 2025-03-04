@@ -1,0 +1,3 @@
+curl -I https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/x86_64/
+
+setenv=LEAPP_ENABLE_REPOS=ol8_basemediol_ol8_appstream_ol8_UEKR6_ol8_addons_ol8_kplice_ol8_developer
