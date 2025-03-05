@@ -76,3 +76,11 @@ define service {
 
 ````
 
+**Testing**
+
+````
+curl -k "https://localhost:5693/api/agent/plugin/check_http_port.sh/8080?token=mytoken"
+/usr/local/nagios/libexec/check_ncpa.py -H <oracle_linux_ip> -t mytoken -P 5693 -M 'agent/plugin/check_http_port.sh/8080' -k
+/usr/local/nagios/libexec/check_ncpa.py -H <oracle_linux_ip> -t mytoken -P 5693 -M 'agent/plugin/check_http_port.sh/8080' -k -d
+````
+
