@@ -1,7 +1,7 @@
 cd /usr/local/ncpa/plugins/
 nano check_http_port.sh
-`#!/bin/bash
-
+````
+#!/bin/bash
 # Check if a port argument is provided
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <port>"
@@ -20,7 +20,8 @@ if [ "$STATUS" -eq 200 ]; then
 else
     echo "HTTP CRITICAL: Status code $STATUS on port $PORT"
     exit 2  # Nagios CRITICAL status
-fi`
+fi
+````
 
 -----------
 chmod +x /usr/local/ncpa/plugins/check_http_port.sh
