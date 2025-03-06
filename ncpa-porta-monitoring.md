@@ -76,6 +76,13 @@ define service {
 
 ````
 
+````
+define command {
+    command_name    check_ncpa_http_port
+    command_line    $USER1$/check_ncpa.py -H $HOSTADDRESS$ -t $ARG1$ -P 5693 -M '/plugins/check_http_port.sh' -a '$ARG2$' -k 
+}
+````
+
 **Testing**
 
 ````
