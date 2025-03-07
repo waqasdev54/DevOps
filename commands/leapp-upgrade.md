@@ -236,7 +236,10 @@ After the upgrade, SSH may fail due to service misconfiguration, firewall settin
     ```bash
     sudo grub2-mkconfig -o /boot/grub2/grub.cfg
     ```
-
+**- Search**
+```
+awk '/^\[.*\]/ {if (found) print entry; entry=$0; found=0} /inhibitor/ {found=1} {entry=entry "\n" $0} END {if (found) print entry}' /path/to/logfile
+```
 ---
 
 ## Conclusion
