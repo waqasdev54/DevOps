@@ -248,6 +248,7 @@ Upgrading from Oracle Linux 7 to Oracle Linux 8 with Leapp can be challenging du
 ## Additional Resources
 
 - [Oracle Linux 8 Leapp Upgrade Guide](https://docs.oracle.com/en/operating-systems/oracle-linux/8/leapp/)
+- [dev docs](https://dev.to/project42/upgrading-oracle-linux-7-to-8-with-leapp-18dh)
 - [Leapp Official Documentation](https://leapp.readthedocs.io/en/latest/)
 - [Oracle Linux Yum Repository](https://yum.oracle.com/)
 - [SELinux Troubleshooting Guide](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/using_selinux/troubleshooting-problems-related-to-selinux_using-selinux)
