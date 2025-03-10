@@ -74,6 +74,10 @@ Package conflicts occur when existing packages on Oracle Linux 7 clash with thos
 2. **Remove Conflicting Packages**:
    - Uninstall problematic packages:
      ```bash
+     #Removing All package once
+     rpm -qa | grep python36 | xargs sudo rpm -e --nodeps
+     rpm -qa | grep python36 | xargs sudo rpm -e
+     rpm -qa | grep python36 | xargs -I {} sudo rpm -e --nodeps -vv {}
      sudo yum remove python36-docutils python36-certifi python36-six -y
      ```
 3. **Clean Yum Cache**:
