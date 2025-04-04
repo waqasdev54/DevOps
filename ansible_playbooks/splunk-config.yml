@@ -1,0 +1,71 @@
+---
+- name: Configure Splunk Universal Forwarder
+  hosts: all
+  become: yes
+  vars:
+    deploydir_loc: "/opt/splunkforwarder/etc/system/local"
+    deployment_server: "ls-splunkds-prd.arvest.com:8089"
+
+  tasks:
+    - name: Stop Splunk server service
+      systemd:
+        name: splunk.server
+        state: stopped
+      ignore_errors: yes
+
+    - name: Stop SplunkForwarder service (option 1)
+      systemd:
+        name: splunkforwarder.service
+        state: stopped
+      ignore_errors: yes
+
+    - name: Stop SplunkForwarder service (option 2)
+      systemd:
+        name: SplunkForwarder.service
+        state: stopped
+      ignore_errors: yes
+
+    - name: Ensure splunk user exists
+      user:
+        name: splunk
+        state: present
+
+    - name: Remove splunkfwd user if exists
+      user:
+        name: splunkfwd
+        state: absent
+        remove: yes
+
+    - name: Configure Splunk Universal Forwarder to start at boot using systemd
+      command: /opt/splunkforwarder/bin/splunk enable boot-start -systemd-managed 1 -user splunk
+      args:
+        creates: /etc/systemd/system/SplunkForwarder.service
+      register: boot_config
+      changed_when: boot_config.rc == 0
+
+    - name: Create deployment directory if it doesn't exist
+      file:
+        path: "{{ deploydir_loc }}"
+        state: directory
+        owner: splunk
+        group: splunk
+        mode: '0755'
+
+    - name: Create deploymentclient.conf file
+      blockinfile:
+        path: "{{ deploydir_loc }}/deploymentclient.conf"
+        create: yes
+        owner: splunk
+        group: splunk
+        mode: '0644'
+        block: |
+          [target-broker:deploymentServer]
+          targetUri = {{ deployment_server }}
+      register: config_file
+
+    - name: Restart SplunkForwarder service
+      systemd:
+        name: SplunkForwarder.service
+        state: restarted
+        daemon_reload: yes
+      when: config_file.changed
