@@ -22,68 +22,47 @@ sudo cp -rf /var/www/html/ /backup/php7/  # If applicable
 
 ## Step 2: Install Required Repositories
 
-PHP 8 is not available in the default RHEL 7 repositories. You'll need to use the Remi repository:
+### IMPORTANT: Alternate Method - Skip EPEL and Use Remi Directly
 
-### Installing EPEL Repository
-
-If you encounter 404 errors with the EPEL repository URL, try these alternative methods:
-
-**Method 1 - Using the latest URL:**
-```bash
-sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-```
-
-**Method 2 - Using Red Hat subscription:**
-```bash
-sudo subscription-manager repos --enable rhel-*-optional-rpms
-sudo subscription-manager repos --enable rhel-*-extras-rpms
-sudo yum install -y epel-release
-```
-
-**Method 3 - Manual download and installation:**
-```bash
-wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-sudo rpm -ivh epel-release-latest-7.noarch.rpm
-```
-
-### Installing Remi Repository
-Once EPEL is installed, proceed with installing the Remi repository:
+Since you're encountering persistent issues with the EPEL repository, we'll use an alternative approach by installing Remi repository directly:
 
 ```bash
-sudo yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
-```
+# Download the Remi RPM directly
+wget https://rpms.remirepo.net/enterprise/remi-release-7.rpm
 
-## Step 3: Install the yum-utils Package
+# Install the Remi RPM package
+sudo rpm -Uvh remi-release-7.rpm
 
-```bash
+# Install yum-utils
 sudo yum install -y yum-utils
 ```
 
-## Step 4: Disable PHP 7.4 and Enable PHP 8.x Repository
+## Step 3: Configure PHP 8 Repository
 
 Choose which PHP 8 version you want to install. For this guide, we'll use PHP 8.2 as an example:
 
 ```bash
-# Disable PHP 7.4
-sudo yum-config-manager --disable remi-php74
-
 # Enable PHP 8.2
 sudo yum-config-manager --enable remi-php82
 ```
 
-## Step 5: Upgrade PHP
+## Step 4: Upgrade PHP
 
 ```bash
+# Update yum cache
+sudo yum clean all
+sudo yum makecache
+
 # Remove the old PHP packages (optional, but recommended to avoid conflicts)
-sudo yum remove php-*
+sudo yum remove -y php-*
 
 # Install PHP 8.2 and common extensions
 sudo yum install -y php php-cli php-common php-fpm php-mysqlnd php-zip php-devel php-gd php-mbstring php-curl php-xml php-pear php-bcmath php-json php-intl php-opcache
 ```
 
-Note: The `php-mcrypt` extension is deprecated and not available in PHP 8. Adjust the extensions based on your specific requirements.
+Note: Adjust the extensions based on your specific requirements.
 
-## Step 6: Verify PHP Version
+## Step 5: Verify PHP Version
 
 ```bash
 php -v
@@ -91,7 +70,7 @@ php -v
 
 The output should show PHP 8.2.x.
 
-## Step 7: Update PHP Configuration
+## Step 6: Update PHP Configuration
 
 Review and update your PHP configuration files as needed:
 
@@ -101,7 +80,7 @@ sudo vi /etc/php.ini
 
 PHP 8 might have different default settings, so compare with your backed-up configuration and adjust accordingly.
 
-## Step 8: Restart Web Server
+## Step 7: Restart Web Server
 
 If you're using Apache:
 
@@ -116,11 +95,43 @@ sudo systemctl restart php-fpm
 sudo systemctl restart nginx
 ```
 
-## Step 9: Test Your Applications
+## Step 8: Test Your Applications
 
 Test your PHP applications for compatibility issues. PHP 8 introduces several breaking changes compared to PHP 7.4.
 
 ## Common Issues and Solutions
+
+### Troubleshooting Repository Issues
+
+If you continue to have issues with the repositories:
+
+1. **Check network connectivity**:
+   ```bash
+   ping 8.8.8.8
+   ```
+
+2. **Verify DNS resolution**:
+   ```bash
+   nslookup rpms.remirepo.net
+   ```
+
+3. **Try with disabled SELinux temporarily**:
+   ```bash
+   sudo setenforce 0
+   ```
+   (Remember to re-enable it after installation: `sudo setenforce 1`)
+
+4. **Check if your system is behind a proxy**:
+   If so, configure yum to use your proxy:
+   ```bash
+   # Add to /etc/yum.conf
+   proxy=http://proxy.example.com:3128
+   ```
+
+5. **Try with an alternate DNS server**:
+   ```bash
+   echo "nameserver 8.8.8.8" | sudo tee -a /etc/resolv.conf
+   ```
 
 ### Application Compatibility
 
@@ -136,14 +147,6 @@ Run the following command to check for potential compatibility issues:
 find /path/to/your/code -name "*.php" -exec php -l {} \;
 ```
 
-### Repository Issues
-
-If you encounter errors accessing repositories:
-- Check your network connectivity
-- Verify that there are no firewall restrictions blocking repository access
-- Try using alternative repository URLs or mirrors
-- Make sure your system's time and date are correctly set
-
 ### Extension Compatibility
 
 Some extensions might not be available or work differently in PHP 8. Check each extension's documentation for PHP 8 compatibility.
@@ -154,7 +157,7 @@ If you encounter critical issues and need to revert to PHP 7.4:
 
 ```bash
 # Remove PHP 8
-sudo yum remove php-*
+sudo yum remove -y php-*
 
 # Enable PHP 7.4 repository
 sudo yum-config-manager --disable remi-php82
@@ -177,4 +180,3 @@ sudo systemctl restart httpd  # or nginx and php-fpm
 - [PHP 8.2 Migration Guide](https://www.php.net/manual/en/migration82.php)
 - [Remi Repository Documentation](https://blog.remirepo.net/pages/Config-en)
 - [RHEL Documentation](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7)
-- [EPEL Repository Information](https://docs.fedoraproject.org/en-US/epel/)
