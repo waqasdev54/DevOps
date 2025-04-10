@@ -24,11 +24,32 @@ sudo cp -rf /var/www/html/ /backup/php7/  # If applicable
 
 PHP 8 is not available in the default RHEL 7 repositories. You'll need to use the Remi repository:
 
-```bash
-# Install EPEL repository first
-sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+### Installing EPEL Repository
 
-# Install Remi repository
+If you encounter 404 errors with the EPEL repository URL, try these alternative methods:
+
+**Method 1 - Using the latest URL:**
+```bash
+sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+```
+
+**Method 2 - Using Red Hat subscription:**
+```bash
+sudo subscription-manager repos --enable rhel-*-optional-rpms
+sudo subscription-manager repos --enable rhel-*-extras-rpms
+sudo yum install -y epel-release
+```
+
+**Method 3 - Manual download and installation:**
+```bash
+wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+sudo rpm -ivh epel-release-latest-7.noarch.rpm
+```
+
+### Installing Remi Repository
+Once EPEL is installed, proceed with installing the Remi repository:
+
+```bash
 sudo yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
 ```
 
@@ -57,10 +78,10 @@ sudo yum-config-manager --enable remi-php82
 sudo yum remove php-*
 
 # Install PHP 8.2 and common extensions
-sudo yum install -y php php-cli php-common php-fpm php-mysqlnd php-zip php-devel php-gd php-mcrypt php-mbstring php-curl php-xml php-pear php-bcmath php-json php-intl php-opcache
+sudo yum install -y php php-cli php-common php-fpm php-mysqlnd php-zip php-devel php-gd php-mbstring php-curl php-xml php-pear php-bcmath php-json php-intl php-opcache
 ```
 
-Note: Adjust the extensions based on your specific requirements.
+Note: The `php-mcrypt` extension is deprecated and not available in PHP 8. Adjust the extensions based on your specific requirements.
 
 ## Step 6: Verify PHP Version
 
@@ -115,6 +136,14 @@ Run the following command to check for potential compatibility issues:
 find /path/to/your/code -name "*.php" -exec php -l {} \;
 ```
 
+### Repository Issues
+
+If you encounter errors accessing repositories:
+- Check your network connectivity
+- Verify that there are no firewall restrictions blocking repository access
+- Try using alternative repository URLs or mirrors
+- Make sure your system's time and date are correctly set
+
 ### Extension Compatibility
 
 Some extensions might not be available or work differently in PHP 8. Check each extension's documentation for PHP 8 compatibility.
@@ -132,7 +161,7 @@ sudo yum-config-manager --disable remi-php82
 sudo yum-config-manager --enable remi-php74
 
 # Reinstall PHP 7.4
-sudo yum install -y php php-cli php-common php-fpm php-mysqlnd php-zip php-devel php-gd php-mcrypt php-mbstring php-curl php-xml php-pear php-bcmath php-json
+sudo yum install -y php php-cli php-common php-fpm php-mysqlnd php-zip php-devel php-gd php-mbstring php-curl php-xml php-pear php-bcmath php-json
 
 # Restore your backup configurations
 sudo cp -rf /backup/php7/php.ini /etc/
@@ -148,3 +177,4 @@ sudo systemctl restart httpd  # or nginx and php-fpm
 - [PHP 8.2 Migration Guide](https://www.php.net/manual/en/migration82.php)
 - [Remi Repository Documentation](https://blog.remirepo.net/pages/Config-en)
 - [RHEL Documentation](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7)
+- [EPEL Repository Information](https://docs.fedoraproject.org/en-US/epel/)
