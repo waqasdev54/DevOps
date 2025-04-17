@@ -68,3 +68,13 @@ https://learn.microsoft.com/en-us/powershell/module/grouppolicy/remove-gpo?view=
 
 **Postfix Configuration for SMTP**
 https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-as-a-send-only-smtp-server-on-ubuntu-22-04
+
+
+
+**reason **
+
+
+CVE-2023-41993 is a critical vulnerability in WebKit, affecting systems with WebKitGTK, specifically the webkit2gtk3 package, which could allow remote code execution via malicious web content. After investigation, it was confirmed that our Oracle Linux system does not have webkit2gtk3 or any WebKit-related packages installed, as verified by the command rpm -qa | grep webkit, which returned no output. Since the vulnerability requires the presence of WebKitGTK to be exploitable, our system is not affected. No remediation is necessary, and the system remains secure against this CVE. Regular updates via sudo yum update will continue to be applied to address other potential vulnerabilities.
+
+reference 
+https://access.redhat.com/security/cve/cve-2023-41993
