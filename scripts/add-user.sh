@@ -1,56 +1,55 @@
 #!/bin/bash
+set -eo pipefail
 
-# Define variables
+# your normal vars
 USERNAME="your_ssh_username"
 PASSWORD="your_ssh_password"
 ANSIBLE_PASSWORD="your_ansible_password"
 
-# Define list of servers
 SERVERS=(
   "10.51.2.14"
-  # Add more servers as needed
+  # …
 )
 
-# The public key you want to add to authorized_keys
 PUBLIC_KEY="ssh-rsa YOUR_PUBLIC_KEY_HERE user@host"
 
-# Loop through the servers
-for server in "${SERVERS[@]}"
-do
-  echo "Processing server: $server"
+for server in "${SERVERS[@]}"; do
+  echo "→ Processing $server…"
 
-  sshpass -p "$PASSWORD" ssh -t -o StrictHostKeyChecking=no "$USERNAME@$server" bash <<EOF
-    set -e
+  sshpass -p "$PASSWORD" ssh -tt -o StrictHostKeyChecking=no \
+    "$USERNAME@$server" bash <<EOF
+# stop on first error
+set -e
 
-    # Create ansible user if it doesn't exist
-    if ! id ansible >/dev/null 2>&1; then
-      sudo useradd -m ansible
-      echo "Created ansible user"
-    fi
+# send SSH password into sudo
+echo "$PASSWORD" | sudo -S bash -c '
+  # only create if missing
+  if ! id ansible &>/dev/null; then
+    useradd -m ansible
+  fi
 
-    # Set password
-    echo "ansible:$ANSIBLE_PASSWORD" | sudo chpasswd
+  # set ansible user password
+  echo "ansible:$ANSIBLE_PASSWORD" | chpasswd
 
-    # Add to sudoers
-    echo "ansible ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/ansible >/dev/null
-    sudo chmod 440 /etc/sudoers.d/ansible
+  # passwordless sudo for ansible
+  echo "ansible ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/ansible
+  chmod 440 /etc/sudoers.d/ansible
 
-    # Setup SSH
-    sudo -u ansible mkdir -p /home/ansible/.ssh
-    echo "$PUBLIC_KEY" | sudo tee /home/ansible/.ssh/authorized_keys >/dev/null
-    sudo chmod 700 /home/ansible/.ssh
-    sudo chmod 600 /home/ansible/.ssh/authorized_keys
-    sudo chown -R ansible:ansible /home/ansible/.ssh
+  # install your public key
+  mkdir -p /home/ansible/.ssh
+  echo "$PUBLIC_KEY" > /home/ansible/.ssh/authorized_keys
+  chmod 700 /home/ansible/.ssh
+  chmod 600 /home/ansible/.ssh/authorized_keys
+  chown -R ansible:ansible /home/ansible/.ssh
+'
 
-    echo "Ansible user setup completed successfully on $server"
+echo "✔  $server configured successfully"
 EOF
 
-  if [ $? -eq 0 ]; then
-    echo "✅ Completed setup on $server"
-  else
-    echo "❌ Failed to configure $server"
+  if [ $? -ne 0 ]; then
+    echo "✘  $server failed"
   fi
-  echo "--------------------------"
+  echo "--------------------------------"
 done
 
-echo "All servers processed!"
+echo "All done!"
