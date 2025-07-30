@@ -1,0 +1,99 @@
+---
+- name: Remove lines containing 'password' from .bash_history for all users
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Get all users with home directories
+      shell: "getent passwd | awk -F: '$6 ~ /^\\/home/ {print $1\":\"$6}'"
+      register: regular_users
+      changed_when: false
+
+    - name: Get root user home directory
+      shell: "getent passwd root | cut -d: -f6"
+      register: root_home
+      changed_when: false
+
+    - name: Combine all users (regular users + root)
+      set_fact:
+        all_users: "{{ regular_users.stdout_lines + ['root:' + root_home.stdout] }}"
+
+    - name: Check if .bash_history exists for each user
+      stat:
+        path: "{{ item.split(':')[1] }}/.bash_history"
+      register: bash_history_files
+      loop: "{{ all_users }}"
+
+    - name: Check if .bash_history files contain 'password' (case-insensitive)
+      shell: "grep -il 'password' '{{ item.stat.path }}'"
+      register: files_with_password
+      loop: "{{ bash_history_files.results }}"
+      when: item.stat.exists
+      failed_when: false
+      changed_when: false
+
+    - name: Create backup of .bash_history files containing 'password'
+      copy:
+        src: "{{ item.item.stat.path }}"
+        dest: "{{ item.item.stat.path }}.backup.{{ ansible_date_time.epoch }}"
+        remote_src: yes
+        owner: "{{ item.item.stat.uid }}"
+        group: "{{ item.item.stat.gid }}"
+        mode: "{{ item.item.stat.mode }}"
+      loop: "{{ files_with_password.results }}"
+      when: 
+        - item.rc is defined
+        - item.rc == 0
+        - item.stdout is defined
+        - item.stdout != ""
+
+    - name: Remove lines containing 'password' from .bash_history (case-insensitive)
+      lineinfile:
+        path: "{{ item.item.stat.path }}"
+        regexp: ".*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd].*"
+        state: absent
+      loop: "{{ files_with_password.results }}"
+      when: 
+        - item.rc is defined
+        - item.rc == 0
+        - item.stdout is defined
+        - item.stdout != ""
+
+    - name: Get username from path for reporting
+      set_fact:
+        modified_files: "{{ modified_files | default([]) + [{'path': item.item.stat.path, 'user': item.item.item.split(':')[0]}] }}"
+      loop: "{{ files_with_password.results }}"
+      when: 
+        - item.rc is defined
+        - item.rc == 0
+        - item.stdout is defined
+        - item.stdout != ""
+
+    - name: Report modified .bash_history files
+      debug:
+        msg: "Cleaned .bash_history for user '{{ item.user }}' at {{ item.path }} (backup: {{ item.path }}.backup.{{ ansible_date_time.epoch }})"
+      loop: "{{ modified_files | default([]) }}"
+
+    - name: Clear current bash history in memory for logged-in users
+      shell: |
+        for pid in $(pgrep -f bash); do
+          user=$(ps -o user= -p $pid 2>/dev/null)
+          if [ -n "$user" ]; then
+            sudo -u "$user" bash -c 'history -c 2>/dev/null' || true
+          fi
+        done
+      changed_when: false
+      failed_when: false
+
+    - name: Display cleanup summary
+      debug:
+        msg: |
+          Cleanup Summary:
+          - Total users processed: {{ all_users | length }}
+          - .bash_history files found: {{ bash_history_files.results | selectattr('stat.exists') | list | length }}
+          - Files with password references: {{ (modified_files | default([])) | length }}
+          - Backup timestamp: {{ ansible_date_time.epoch }}
+          
+          Recommendation: Users should run 'history -c && history -w' in active bash sessions
+          to ensure in-memory history is cleared and changes are saved.
